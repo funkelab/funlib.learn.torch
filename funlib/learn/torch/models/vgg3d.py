@@ -1,11 +1,15 @@
-from gunpowder import *
-from gunpowder.ext import torch
-from gunpowder.torch import *
+import torch
 import logging
+
+logger = logging.getLogger(__name__)
 
 class Vgg3D(torch.nn.Module):
 
-    def __init__(self, input_size, fmaps=32, downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)]):
+    def __init__(
+            self,
+            input_size,
+            fmaps=32,
+            downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)]):
 
         super(Vgg3D, self).__init__()
 
@@ -36,12 +40,18 @@ class Vgg3D(torch.nn.Module):
             current_fmaps = fmaps
             fmaps *= 2
 
-            size = current_size / downsample_factors[i]
-            assert size * downsample_factors[i] == current_size, \
-                "Can not downsample %s by chosen downsample factor" % (current_size,)
+            size = tuple(
+                c/d
+                for c, d in zip(current_size ,downsample_factors[i]))
+            check = (
+                s*d == c
+                for s, d, c in zip(size, downsample_factors[i], current_size))
+            assert all(check), \
+                "Can not downsample %s by chosen downsample factor" % \
+                    (current_size,)
             current_size = size
 
-            logging.info(
+            logger.info(
                 "VGG level %d: (%s), %d fmaps",
                 i,
                 current_size,
