@@ -1,5 +1,6 @@
 import torch
 
+
 class Autoencoder(torch.nn.Module):
 
     def __init__(
@@ -43,7 +44,7 @@ class Autoencoder(torch.nn.Module):
         encoder.append(
             torch.nn.Conv3d(
                 in_channels,
-                fmap_bottle,
+                fmaps_bottle,
                 kernel_size))
         encoder.append(
             torch.nn.ReLU(inplace=True))
@@ -95,7 +96,6 @@ class Autoencoder(torch.nn.Module):
 
         self.decoder = torch.nn.Sequential(*decoder)
 
-
     def forward(self, x):
 
         enc = self.encoder(x)
@@ -103,6 +103,3 @@ class Autoencoder(torch.nn.Module):
         dec = self.decoder(enc)
 
         return dec
-
-
-

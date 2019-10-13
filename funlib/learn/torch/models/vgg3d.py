@@ -3,18 +3,19 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 class Vgg3D(torch.nn.Module):
 
     def __init__(
             self,
             input_size,
             fmaps=32,
-            downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)]):
+            downsample_factors=[(2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2)]):
 
         super(Vgg3D, self).__init__()
 
         current_fmaps = 1
-        current_size = Coordinate(input_size)
+        current_size = tuple(input_size)
 
         features = []
         for i in range(len(downsample_factors)):
@@ -42,13 +43,13 @@ class Vgg3D(torch.nn.Module):
 
             size = tuple(
                 c/d
-                for c, d in zip(current_size ,downsample_factors[i]))
+                for c, d in zip(current_size, downsample_factors[i]))
             check = (
                 s*d == c
                 for s, d, c in zip(size, downsample_factors[i], current_size))
             assert all(check), \
                 "Can not downsample %s by chosen downsample factor" % \
-                    (current_size,)
+                (current_size,)
             current_size = size
 
             logger.info(
@@ -61,7 +62,10 @@ class Vgg3D(torch.nn.Module):
 
         classifier = [
             torch.nn.Linear(
-                current_size[0] * current_size[1] * current_size[2] * current_fmaps,
+                current_size[0] *
+                current_size[1] *
+                current_size[2] *
+                current_fmaps,
                 4096),
             torch.nn.ReLU(inplace=True),
             torch.nn.Dropout(),
@@ -80,7 +84,7 @@ class Vgg3D(torch.nn.Module):
         print(self)
 
     def forward(self, raw):
-        shape = tuple(raw.shape)            #changed from size() to shape
+        shape = tuple(raw.shape)
         raw_with_channels = raw.reshape(
             shape[0],
             1,
