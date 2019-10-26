@@ -1,6 +1,7 @@
 from .conv4d import Conv4d
 import math
 import torch
+import torch.nn as nn
 
 
 class ConvPass(torch.nn.Module):
@@ -348,7 +349,7 @@ class UNet(torch.nn.Module):
         # modules
 
         # left convolutional passes
-        self.l_conv = [
+        self.l_conv = nn.ModuleList([
             ConvPass(
                 in_channels
                 if level == 0
@@ -357,17 +358,17 @@ class UNet(torch.nn.Module):
                 kernel_size_down[level],
                 activation=activation)
             for level in range(self.num_levels)
-        ]
+        ])
 
         # left downsample layers
-        self.l_down = [
+        self.l_down = nn.ModuleList([
             Downsample(downsample_factors[level])
             for level in range(self.num_levels - 1)
-        ]
+        ])
 
         # right up/crop/concatenate layers
-        self.r_up = [
-            [
+        self.r_up = nn.ModuleList([
+            nn.ModuleList([
                 Upsample(
                     downsample_factors[level],
                     mode='nearest' if constant_upsample else 'transposed_conv',
@@ -376,13 +377,13 @@ class UNet(torch.nn.Module):
                     crop_factor=crop_factors[level],
                     next_conv_kernel_sizes=kernel_size_up[level])
                 for level in range(self.num_levels - 1)
-            ]
+            ])
             for _ in range(num_heads)
-        ]
+        ])
 
         # right convolutional passes
-        self.r_conv = [
-            [
+        self.r_conv = nn.ModuleList([
+            nn.ModuleList([
                 ConvPass(
                     num_fmaps*fmap_inc_factors**level +
                     num_fmaps*fmap_inc_factors**(level + 1),
@@ -392,9 +393,9 @@ class UNet(torch.nn.Module):
                     kernel_size_up[level],
                     activation=activation)
                 for level in range(self.num_levels - 1)
-            ]
+            ])
             for _ in range(num_heads)
-        ]
+        ])
 
     def rec_forward(self, level, f_in):
 
