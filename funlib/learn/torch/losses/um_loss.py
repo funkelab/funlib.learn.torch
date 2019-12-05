@@ -207,15 +207,15 @@ def ultrametric_loss(
 
     Args:
 
-        embedding (Tensor, shape ``(k, d, h, w)``):
+        embedding (Tensor, shape ``(b, c, d, h, w)``):
 
             A k-dimensional feature embedding of points in 3D.
 
-        gt_seg (Tensor, shape ``(d, h, w)``):
+        gt_seg (Tensor, shape ``(b, c, d, h, w)``):
 
             The ground-truth labels of the points.
 
-        mask (optional, Tensor, shape ``(d, h, w)``):
+        mask (optional, Tensor, shape ``(b, c, d, h, w)``):
 
             If given, consider only points that are not zero in the mask.
 
@@ -272,8 +272,9 @@ def ultrametric_loss(
         and ``dist`` the length of the edges.
     """
 
-    # We get the embedding as a tensor of shape (k, d, h, w).
-    k, depth, height, width = embedding.shape
+    # We get the embedding as a tensor of shape (b, c, d, h, w).
+    b, c, *image_shape = embedding.shape
+    k = np.prod(image_shape)
 
     # 1. Augmented by spatial coordinates, if requested.
 
@@ -282,22 +283,21 @@ def ultrametric_loss(
         try:
             scale = tuple(coordinate_scale)
         except TypeError:
-            scale = (coordinate_scale,) * 3
+            scale = (coordinate_scale,) * len(image_shape)
 
         coordinates = torch.meshgrid(
-            np.arange(0, depth * scale[0], scale[0]),
-            np.arange(0, height * scale[1], scale[1]),
-            np.arange(0, width * scale[2], scale[2]),
-            indexing="ij",
+            *[
+                torch.from_numpy(np.arange(0, image_shape[i] * scale[i], scale[i]))
+                for i in range(len(image_shape))
+            ]
         )
-        for i in range(len(coordinates)):
-            coordinates[i] = coordinates[i].float32()
-        embedding = torch.cat([embedding, coordinates], 0)
+        coordinates = [coord.float().view(1, 1, *coord.shape) for coord in coordinates]
+        embedding = torch.cat([embedding, *coordinates], dim=1)
 
-        max_scale = float(scale.max())
-        min_scale = float(scale.min())
+        max_scale = float(max(scale))
+        min_scale = float(min(scale))
         min_d = min_scale
-        max_d = np.sqrt(max_scale ** 2 + k)
+        max_d = np.sqrt(max_scale ** 2 + c)
 
         if (max_d - min_d) < alpha:
             logger.warn(
@@ -310,13 +310,13 @@ def ultrametric_loss(
 
     # 2. Transpose into tensor (d*h*w, k), i.e., one embedding vector per node.
 
-    embedding = embedding.permute(1, 2, 3, 0)
-    embedding = embedding.view(depth * width * height, -1)
-    gt_seg = gt_seg.view(depth * width * height)
+    embedding = embedding.view(-1, k)
+    embedding = embedding.permute(1, 0)
+    gt_seg = gt_seg.view(k)
 
     if mask is not None:
         # TODO: find alternative of masked_select that does not require excessive reshaping
-        mask = mask.view(depth * width * height, 1)
+        mask = mask.view(k, 1)
         embedding = torch.masked_select(embedding, mask).view(-1, embedding.shape[-1])
         gt_seg = torch.masked_select(gt_seg.view(-1, 1), mask).view(-1)
 

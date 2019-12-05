@@ -7,8 +7,8 @@ import pytest
 
 def test_zero():
 
-    embedding = np.zeros((3, 10, 10, 10), dtype=np.float32)
-    segmentation = np.ones((10, 10, 10), dtype=np.int64)
+    embedding = np.zeros((1, 3, 10, 10, 10), dtype=np.float32)
+    segmentation = np.ones((1, 1, 10, 10, 10), dtype=np.int64)
 
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
@@ -17,19 +17,31 @@ def test_zero():
         embedding, segmentation, add_coordinates=False, name="um_test_zero"
     )
 
-    assert loss == 0
-    assert np.sum(distances) == 0
+    assert pytest.approx(loss) == 0
+    assert pytest.approx(np.sum(distances)) == 0
+
+
+def test_zero_with_coordinates():
+
+    embedding = np.zeros((1, 3, 10, 10, 10), dtype=np.float32)
+    segmentation = np.ones((1, 1, 10, 10, 10), dtype=np.int64)
+
+    embedding = torch.from_numpy(embedding).float()
+    segmentation = torch.from_numpy(segmentation)
+
+    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+        embedding, segmentation, add_coordinates=True, name="um_test_zero"
+    )
+
+    assert pytest.approx(loss) == 1
+    assert pytest.approx(np.sum(distances)) == 999
 
 
 def test_simple():
 
-    embedding = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]], dtype=np.float32).reshape(
-        (1, 1, 3, 3)
-    )
+    embedding = np.array([[[[0, 1, 2], [3, 4, 5], [6, 7, 8]]]], dtype=np.float32)
 
-    segmentation = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]], dtype=np.int64).reshape(
-        (1, 3, 3)
-    )
+    segmentation = np.array([[[[1, 1, 1], [2, 2, 2], [3, 3, 3]]]], dtype=np.int64)
 
     # number of positive pairs: 3*3 = 9
     # number of negative pairs: 3*3*3 = 27
@@ -63,19 +75,15 @@ def test_simple():
         name="um_test_simple_balanced",
     )
 
-    assert loss == 2.0
+    assert pytest.approx(loss) == 2.0
     assert pytest.approx(np.sum(distances)) == 8
 
 
 def test_background():
 
-    embedding = np.array([[0, 1, 2], [4, 5, 6], [8, 9, 10]], dtype=np.float32).reshape(
-        (1, 1, 3, 3)
-    )
+    embedding = np.array([[[[0, 1, 2], [4, 5, 6], [8, 9, 10]]]], dtype=np.float32)
 
-    segmentation = np.array([[1, 1, 1], [0, 0, 0], [3, 3, 3]], dtype=np.int64).reshape(
-        (1, 3, 3)
-    )
+    segmentation = np.array([[[[1, 1, 1], [0, 0, 0], [3, 3, 3]]]], dtype=np.int64)
 
     # number of positive pairs: 2*3 = 6
     # number of negative pairs: 3*3*3 = 27
@@ -107,20 +115,16 @@ def test_background():
 
 def test_mask():
 
-    embedding = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]], dtype=np.float32).reshape(
-        (1, 1, 3, 3)
-    )
+    embedding = np.array([[[[0, 1, 2], [3, 4, 5], [6, 7, 8]]]], dtype=np.float32)
 
-    segmentation = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]], dtype=np.int64).reshape(
-        (1, 3, 3)
-    )
+    segmentation = np.array([[[[1, 1, 1], [2, 2, 2], [3, 3, 3]]]], dtype=np.int64)
 
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
     # empty mask
 
-    mask = np.zeros((1, 3, 3), dtype=np.bool)
+    mask = np.zeros((1, 1, 3, 3), dtype=np.bool)
     mask = torch.from_numpy(mask)
 
     loss, emst, edges_u, edges_v, distances = ultrametric_loss(
@@ -132,13 +136,13 @@ def test_mask():
         name="um_test_simple_unbalanced",
     )
 
-    assert loss == 0.0
+    assert pytest.approx(loss) == 0.0
     assert pytest.approx(np.sum(distances)) == 0
 
     # mask with only one point
 
-    mask = np.zeros((1, 3, 3), dtype=np.bool)
-    mask[0, 1, 1] = True
+    mask = np.zeros((1, 1, 3, 3), dtype=np.bool)
+    mask[0, 0, 1, 1] = True
     mask = torch.from_numpy(mask)
 
     loss, emst, edges_u, edges_v, distances = ultrametric_loss(
@@ -150,14 +154,14 @@ def test_mask():
         name="um_test_simple_unbalanced",
     )
 
-    assert loss == 0.0
+    assert pytest.approx(loss) == 0.0
     assert pytest.approx(np.sum(distances)) == 0
 
     # mask with two points
 
-    mask = np.zeros((1, 3, 3), dtype=np.bool)
-    mask[0, 1, 1] = True
-    mask[0, 0, 0] = True
+    mask = np.zeros((1, 1, 3, 3), dtype=np.bool)
+    mask[0, 0, 1, 1] = True
+    mask[0, 0, 0, 0] = True
     mask = torch.from_numpy(mask)
 
     loss, emst, edges_u, edges_v, distances = ultrametric_loss(
@@ -169,26 +173,22 @@ def test_mask():
         name="um_test_simple_unbalanced",
     )
 
-    assert loss == 1.0
+    assert pytest.approx(loss) == 1.0
     assert pytest.approx(np.sum(distances)) == 4.0
 
 
 def test_constrained_mask():
 
-    embedding = np.array([[0, 1, 2], [3, 4, 5], [6, 7, 8]], dtype=np.float32).reshape(
-        (1, 1, 3, 3)
-    )
+    embedding = np.array([[[[0, 1, 2], [3, 4, 5], [6, 7, 8]]]], dtype=np.float32)
 
-    segmentation = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]], dtype=np.int64).reshape(
-        (1, 3, 3)
-    )
+    segmentation = np.array([[[[1, 1, 1], [2, 2, 2], [3, 3, 3]]]], dtype=np.int64)
 
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
     # empty mask
 
-    mask = np.zeros((1, 3, 3), dtype=np.bool)
+    mask = np.zeros((1, 1, 3, 3), dtype=np.bool)
     mask = torch.from_numpy(mask)
 
     loss, emst, edges_u, edges_v, distances = ultrametric_loss(
@@ -201,13 +201,13 @@ def test_constrained_mask():
         name="um_test_constrained_mask",
     )
 
-    assert loss == 0.0
+    assert pytest.approx(loss) == 0.0
     assert pytest.approx(np.sum(distances)) == 0
 
     # mask with only one point
 
-    mask = np.zeros((1, 3, 3), dtype=np.bool)
-    mask[0, 1, 1] = True
+    mask = np.zeros((1, 1, 3, 3), dtype=np.bool)
+    mask[0, 0, 1, 1] = True
     mask = torch.from_numpy(mask)
 
     loss, emst, edges_u, edges_v, distances = ultrametric_loss(
@@ -220,14 +220,14 @@ def test_constrained_mask():
         name="um_test_constrained_mask",
     )
 
-    assert loss == 0.0
+    assert pytest.approx(loss) == 0.0
     assert pytest.approx(np.sum(distances)) == 0
 
     # mask with two points
 
-    mask = np.zeros((1, 3, 3), dtype=np.bool)
-    mask[0, 1, 1] = True
-    mask[0, 0, 0] = True
+    mask = np.zeros((1, 1, 3, 3), dtype=np.bool)
+    mask[0, 0, 1, 1] = True
+    mask[0, 0, 0, 0] = True
     mask = torch.from_numpy(mask)
 
     loss, emst, edges_u, edges_v, distances = ultrametric_loss(
@@ -240,19 +240,15 @@ def test_constrained_mask():
         name="um_test_constrained_mask",
     )
 
-    assert loss == 1.0
+    assert pytest.approx(loss) == 1.0
     assert pytest.approx(np.sum(distances)) == 4.0
 
 
 def test_constrained():
 
-    embedding = np.array([[0, 1, 101], [2, 3, 4], [5, 6, 7]], dtype=np.float32).reshape(
-        (1, 1, 3, 3)
-    )
+    embedding = np.array([[[[0, 1, 101], [2, 3, 4], [5, 6, 7]]]], dtype=np.float32)
 
-    segmentation = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]], dtype=np.int64).reshape(
-        (1, 3, 3)
-    )
+    segmentation = np.array([[[[1, 1, 1], [2, 2, 2], [3, 3, 3]]]], dtype=np.int64)
 
     # number of positive pairs: 3*3 = 9
     # number of negative pairs: 3*3*3 = 27
@@ -280,9 +276,9 @@ def test_constrained():
 
 def test_ambiguous_unkown():
 
-    embedding = np.array([[0, 1]], dtype=np.float32).reshape((1, 1, 1, 2))
+    embedding = np.array([[[[0, 1]]]], dtype=np.float32)
 
-    segmentation = np.array([[-1, 0]], dtype=np.int64).reshape((1, 1, 2))
+    segmentation = np.array([[[[-1, 0]]]], dtype=np.int64)
 
     # number of positive pairs: 0
     # number of negative pairs: 1
@@ -308,9 +304,9 @@ def test_ambiguous_unkown():
     assert pytest.approx(loss) == 1
     assert pytest.approx(np.sum(distances)) == 1
 
-    embedding = np.array([[0, 1]], dtype=np.float32).reshape((1, 1, 1, 2))
+    embedding = np.array([[[[0, 1]]]], dtype=np.float32)
 
-    segmentation = np.array([[0, -1]], dtype=np.int64).reshape((1, 1, 2))
+    segmentation = np.array([[[[0, -1]]]], dtype=np.int64)
 
     # number of positive pairs: 0
     # number of negative pairs: 1
@@ -338,9 +334,9 @@ def test_ambiguous_unkown():
 
 
 def test_ambiguous_known():
-    embedding = np.array([[0, 1]], dtype=np.float32).reshape((1, 1, 1, 2))
+    embedding = np.array([[[[0, 1]]]], dtype=np.float32)
 
-    segmentation = np.array([[-1, 1]], dtype=np.int64).reshape((1, 1, 2))
+    segmentation = np.array([[[[-1, 1]]]], dtype=np.int64)
 
     # number of positive pairs: 0
     # number of negative pairs: 0
@@ -366,9 +362,9 @@ def test_ambiguous_known():
     assert pytest.approx(loss) == 0
     assert pytest.approx(np.sum(distances)) == 1
 
-    embedding = np.array([[0, 1]], dtype=np.float32).reshape((1, 1, 1, 2))
+    embedding = np.array([[[[0, 1]]]], dtype=np.float32)
 
-    segmentation = np.array([[1, -1]], dtype=np.int64).reshape((1, 1, 2))
+    segmentation = np.array([[[[1, -1]]]], dtype=np.int64)
 
     # number of positive pairs: 0
     # number of negative pairs: 0
@@ -396,9 +392,9 @@ def test_ambiguous_known():
 
 
 def test_ambiguous_ambiguous():
-    embedding = np.array([[0, 1]], dtype=np.float32).reshape((1, 1, 1, 2))
+    embedding = np.array([[[[0, 1]]]], dtype=np.float32)
 
-    segmentation = np.array([[-1, -1]], dtype=np.int64).reshape((1, 1, 2))
+    segmentation = np.array([[[[-1, -1]]]], dtype=np.int64)
 
     # number of positive pairs: 0
     # number of negative pairs: 0
@@ -463,12 +459,12 @@ def test_large_example():
     num_edges = num_pos + num_neg
 
     embedding = np.array(
-        [[0.5, 1, 1.5], [3.5, 3.5, 3.5], [8, 9, 10], [5, 5, 6]], dtype=np.float32
-    ).reshape((1, 1, 4, 3))
+        [[[[0.5, 1, 1.5], [3.5, 3.5, 3.5], [8, 9, 10], [5, 5, 6]]]], dtype=np.float32
+    )
 
     segmentation = np.array(
-        [[1, 0, 1], [2, 2, -1], [3, 3, 3], [0, 0, 0]], dtype=np.int64
-    ).reshape((1, 4, 3))
+        [[[[1, 0, 1], [2, 2, -1], [3, 3, 3], [0, 0, 0]]]], dtype=np.int64
+    )
 
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
@@ -529,13 +525,9 @@ def test_large_example():
 
 def test_quadrupel_loss():
 
-    embedding = np.array([[0, 1, 2], [4, 5, 6], [8, 9, 10]], dtype=np.float32).reshape(
-        (1, 1, 3, 3)
-    )
+    embedding = np.array([[[[0, 1, 2], [4, 5, 6], [8, 9, 10]]]], dtype=np.float32)
 
-    segmentation = np.array([[1, 1, 1], [2, 2, 2], [3, 3, 3]], dtype=np.int64).reshape(
-        (1, 3, 3)
-    )
+    segmentation = np.array([[[[1, 1, 1], [2, 2, 2], [3, 3, 3]]]], dtype=np.int64)
 
     # number of positive pairs: 3*3 = 9
     # number of negative pairs: 3*3*3 = 27
@@ -555,6 +547,50 @@ def test_quadrupel_loss():
         name="um_test_quadrupel_loss",
     )
 
-    assert loss == 4.0
+    assert pytest.approx(loss) == 4.0
     assert pytest.approx(np.sum(distances)) == 10
 
+
+def test_add_coordinates():
+
+    embedding = np.array([[[[0, 1, 2], [3, 4, 5], [6, 7, 8]]]], dtype=np.float32)
+
+    segmentation = np.array([[[[1, 1, 1], [2, 2, 2], [3, 3, 3]]]], dtype=np.int64)
+
+    # number of positive pairs: 3*3 = 9
+    # number of negative pairs: 3*3*3 = 27
+    # total number of pairs: 9*8/2 = 36
+
+    # loss on positive pairs: 9*2 = 18
+    # loss on negative pairs: 27*0 = 27
+    # total loss = 18
+    # total loss per edge = 1
+
+    embedding = torch.from_numpy(embedding).float()
+    segmentation = torch.from_numpy(segmentation)
+
+    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+        embedding,
+        segmentation,
+        alpha=2,
+        add_coordinates=True,
+        balance=False,
+        name="um_test_simple_unbalanced",
+    )
+
+    assert pytest.approx(loss) == 18 / 36
+    assert (
+        pytest.approx(np.sum(distances))
+        == 6 * (1 ** 2 + 1 ** 2 + 0 ** 2) ** 0.5 + 2 * (2 ** 2 + 1 ** 2 + 1 ** 2) ** 0.5
+    )
+
+    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+        embedding,
+        segmentation,
+        alpha=2,
+        add_coordinates=False,
+        name="um_test_simple_balanced",
+    )
+
+    assert pytest.approx(loss) == 2.0
+    assert pytest.approx(np.sum(distances)) == 8
