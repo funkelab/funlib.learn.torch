@@ -5,7 +5,7 @@ import logging
 
 class Vgg3D(torch.nn.Module):
 
-    def __init__(self, input_size, fmaps=32, downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)]):
+    def __init__(self, input_size, fmaps=32, downsample_factors=[(2,2,2), (2,2,2), (2,2,2), (2,2,2)], output_classes=6):
 
         super(Vgg3D, self).__init__()
 
@@ -62,7 +62,7 @@ class Vgg3D(torch.nn.Module):
             torch.nn.Dropout(),
             torch.nn.Linear(
                 4096,
-                6)
+                output_classes)
         ]
 
         self.classifier = torch.nn.Sequential(*classifier)
