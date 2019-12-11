@@ -42,7 +42,7 @@ class Vgg3D(torch.nn.Module):
             fmaps *= 2
 
             size = tuple(
-                c/d
+                int(c/d)
                 for c, d in zip(current_size, downsample_factors[i]))
             check = (
                 s*d == c
