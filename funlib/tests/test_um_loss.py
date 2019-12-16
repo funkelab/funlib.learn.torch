@@ -13,12 +13,12 @@ def test_zero():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding, segmentation, add_coordinates=False, name="um_test_zero"
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, add_coordinates=False,
     )
 
-    assert pytest.approx(loss) == 0
-    assert pytest.approx(np.sum(distances)) == 0
+    assert pytest.approx(float(loss)) == 0
+    assert pytest.approx(np.sum(distances.numpy())) == 0
 
 
 def test_zero_with_coordinates():
@@ -29,12 +29,12 @@ def test_zero_with_coordinates():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding, segmentation, add_coordinates=True, name="um_test_zero"
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, add_coordinates=True,
     )
 
-    assert pytest.approx(loss) == 1
-    assert pytest.approx(np.sum(distances)) == 999
+    assert pytest.approx(float(loss)) == 1
+    assert pytest.approx(np.sum(distances.numpy())) == 999
 
 
 def test_simple():
@@ -55,28 +55,19 @@ def test_simple():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        alpha=2,
-        add_coordinates=False,
-        balance=False,
-        name="um_test_simple_unbalanced",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, alpha=2, add_coordinates=False, balance=False,
     )
 
-    assert pytest.approx(loss) == 1.0
-    assert pytest.approx(np.sum(distances)) == 8
+    assert pytest.approx(float(loss)) == 1.0
+    assert pytest.approx(np.sum(distances.numpy())) == 8
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        alpha=2,
-        add_coordinates=False,
-        name="um_test_simple_balanced",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, alpha=2, add_coordinates=False,
     )
 
-    assert pytest.approx(loss) == 2.0
-    assert pytest.approx(np.sum(distances)) == 8
+    assert pytest.approx(float(loss)) == 2.0
+    assert pytest.approx(np.sum(distances.numpy())) == 8
 
 
 def test_background():
@@ -100,17 +91,12 @@ def test_background():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        alpha=4,
-        add_coordinates=False,
-        balance=False,
-        name="um_test_background",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, alpha=4, add_coordinates=False, balance=False,
     )
 
-    assert pytest.approx(loss, 1e-3) == 3.4545
-    assert pytest.approx(np.sum(distances),) == 10
+    assert pytest.approx(float(loss), 1e-3) == 3.4545
+    assert pytest.approx(np.sum(distances.numpy()),) == 10
 
 
 def test_mask():
@@ -127,17 +113,12 @@ def test_mask():
     mask = np.zeros((1, 1, 3, 3), dtype=np.bool)
     mask = torch.from_numpy(mask)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        mask=mask,
-        alpha=2,
-        add_coordinates=False,
-        name="um_test_simple_unbalanced",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, mask=mask, alpha=2, add_coordinates=False,
     )
 
-    assert pytest.approx(loss) == 0.0
-    assert pytest.approx(np.sum(distances)) == 0
+    assert pytest.approx(float(loss)) == 0.0
+    assert pytest.approx(np.sum(distances.numpy())) == 0
 
     # mask with only one point
 
@@ -145,17 +126,12 @@ def test_mask():
     mask[0, 0, 1, 1] = True
     mask = torch.from_numpy(mask)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        mask=mask,
-        alpha=2,
-        add_coordinates=False,
-        name="um_test_simple_unbalanced",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, mask=mask, alpha=2, add_coordinates=False,
     )
 
-    assert pytest.approx(loss) == 0.0
-    assert pytest.approx(np.sum(distances)) == 0
+    assert pytest.approx(float(loss)) == 0.0
+    assert pytest.approx(np.sum(distances.numpy())) == 0
 
     # mask with two points
 
@@ -164,17 +140,12 @@ def test_mask():
     mask[0, 0, 0, 0] = True
     mask = torch.from_numpy(mask)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        mask=mask,
-        alpha=5,
-        add_coordinates=False,
-        name="um_test_simple_unbalanced",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, mask=mask, alpha=5, add_coordinates=False,
     )
 
-    assert pytest.approx(loss) == 1.0
-    assert pytest.approx(np.sum(distances)) == 4.0
+    assert pytest.approx(float(loss)) == 1.0
+    assert pytest.approx(np.sum(distances.numpy())) == 4.0
 
 
 def test_constrained_mask():
@@ -191,18 +162,17 @@ def test_constrained_mask():
     mask = np.zeros((1, 1, 3, 3), dtype=np.bool)
     mask = torch.from_numpy(mask)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         mask=mask,
         constrained_emst=True,
         alpha=2,
         add_coordinates=False,
-        name="um_test_constrained_mask",
     )
 
-    assert pytest.approx(loss) == 0.0
-    assert pytest.approx(np.sum(distances)) == 0
+    assert pytest.approx(float(loss)) == 0.0
+    assert pytest.approx(np.sum(distances.numpy())) == 0
 
     # mask with only one point
 
@@ -210,18 +180,17 @@ def test_constrained_mask():
     mask[0, 0, 1, 1] = True
     mask = torch.from_numpy(mask)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         mask=mask,
         constrained_emst=True,
         alpha=2,
         add_coordinates=False,
-        name="um_test_constrained_mask",
     )
 
-    assert pytest.approx(loss) == 0.0
-    assert pytest.approx(np.sum(distances)) == 0
+    assert pytest.approx(float(loss)) == 0.0
+    assert pytest.approx(np.sum(distances.numpy())) == 0
 
     # mask with two points
 
@@ -230,18 +199,17 @@ def test_constrained_mask():
     mask[0, 0, 0, 0] = True
     mask = torch.from_numpy(mask)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         mask=mask,
         constrained_emst=True,
         alpha=5,
         add_coordinates=False,
-        name="um_test_constrained_mask",
     )
 
-    assert pytest.approx(loss) == 1.0
-    assert pytest.approx(np.sum(distances)) == 4.0
+    assert pytest.approx(float(loss)) == 1.0
+    assert pytest.approx(np.sum(distances.numpy())) == 4.0
 
 
 def test_constrained():
@@ -261,17 +229,12 @@ def test_constrained():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        alpha=2,
-        add_coordinates=False,
-        constrained_emst=True,
-        name="um_test_constrained",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, alpha=2, add_coordinates=False, constrained_emst=True,
     )
 
-    assert pytest.approx(loss) == 2224
-    assert pytest.approx(np.sum(distances)) == 107
+    assert pytest.approx(float(loss)) == 2224
+    assert pytest.approx(np.sum(distances.numpy())) == 107
 
 
 def test_ambiguous_unkown():
@@ -291,18 +254,17 @@ def test_ambiguous_unkown():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         alpha=2,
         balance=True,
         add_coordinates=False,
         constrained_emst=True,
-        name="um_test_constrained",
     )
 
-    assert pytest.approx(loss) == 1
-    assert pytest.approx(np.sum(distances)) == 1
+    assert pytest.approx(float(loss)) == 1
+    assert pytest.approx(np.sum(distances.numpy())) == 1
 
     embedding = np.array([[[[0, 1]]]], dtype=np.float32)
 
@@ -319,18 +281,17 @@ def test_ambiguous_unkown():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         alpha=2,
         balance=True,
         add_coordinates=False,
         constrained_emst=True,
-        name="um_test_constrained",
     )
 
-    assert pytest.approx(loss) == 1
-    assert pytest.approx(np.sum(distances)) == 1
+    assert pytest.approx(float(loss)) == 1
+    assert pytest.approx(np.sum(distances.numpy())) == 1
 
 
 def test_ambiguous_known():
@@ -349,18 +310,17 @@ def test_ambiguous_known():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         alpha=2,
         balance=True,
         add_coordinates=False,
         constrained_emst=True,
-        name="um_test_constrained",
     )
 
-    assert pytest.approx(loss) == 0
-    assert pytest.approx(np.sum(distances)) == 1
+    assert pytest.approx(float(loss)) == 0
+    assert pytest.approx(np.sum(distances.numpy())) == 1
 
     embedding = np.array([[[[0, 1]]]], dtype=np.float32)
 
@@ -377,18 +337,17 @@ def test_ambiguous_known():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         alpha=2,
         balance=True,
         add_coordinates=False,
         constrained_emst=True,
-        name="um_test_constrained",
     )
 
-    assert pytest.approx(loss) == 0
-    assert pytest.approx(np.sum(distances)) == 1
+    assert pytest.approx(float(loss)) == 0
+    assert pytest.approx(np.sum(distances.numpy())) == 1
 
 
 def test_ambiguous_ambiguous():
@@ -407,18 +366,17 @@ def test_ambiguous_ambiguous():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         alpha=2,
         balance=True,
         add_coordinates=False,
         constrained_emst=True,
-        name="um_test_constrained",
     )
 
-    assert pytest.approx(loss) == 0
-    assert pytest.approx(np.sum(distances)) == 1
+    assert pytest.approx(float(loss)) == 0
+    assert pytest.approx(np.sum(distances.numpy())) == 1
 
 
 def test_large_example():
@@ -469,58 +427,54 @@ def test_large_example():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         constrained_emst=False,
         balance=False,
         alpha=2,
         add_coordinates=False,
-        name="um_test_unbalanced_unconstrained",
     )
 
     # numerator = dist**2 * ratio_pos + (alpha-dist)**2 * ratio_neg
-    assert pytest.approx(loss) == (3.25 + 6.75) / num_edges
-    assert pytest.approx(np.sum(distances)) == 9.5
+    assert pytest.approx(float(loss)) == (3.25 + 6.75) / num_edges
+    assert pytest.approx(np.sum(distances.numpy())) == 9.5
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         constrained_emst=True,
         balance=False,
         alpha=2,
         add_coordinates=False,
-        name="um_test_unbalanced_constrained",
     )
 
-    assert pytest.approx(loss) == (4 + 22) / num_edges
-    assert pytest.approx(np.sum(distances)) == 12
+    assert pytest.approx(float(loss)) == (4 + 22) / num_edges
+    assert pytest.approx(np.sum(distances.numpy())) == 12
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         constrained_emst=False,
         balance=True,
         alpha=2,
         add_coordinates=False,
-        name="um_test_balanced_unconstrained",
     )
 
-    assert pytest.approx(loss) == (3.25 / num_pos + 6.75 / num_neg)
-    assert pytest.approx(np.sum(distances)) == 9.5
+    assert pytest.approx(float(loss)) == (3.25 / num_pos + 6.75 / num_neg)
+    assert pytest.approx(np.sum(distances.numpy())) == 9.5
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
         embedding,
         segmentation,
         constrained_emst=True,
         balance=True,
         alpha=2,
         add_coordinates=False,
-        name="um_test_balanced_constrained",
     )
 
-    assert pytest.approx(loss) == (4 / num_pos + 22 / num_neg)
-    assert pytest.approx(np.sum(distances)) == 12
+    assert pytest.approx(float(loss)) == (4 / num_pos + 22 / num_neg)
+    assert pytest.approx(np.sum(distances.numpy())) == 12
 
 
 def test_quadrupel_loss():
@@ -539,16 +493,11 @@ def test_quadrupel_loss():
     segmentation = torch.from_numpy(segmentation)
 
     loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        alpha=3,
-        add_coordinates=False,
-        quadrupel_loss=True,
-        name="um_test_quadrupel_loss",
+        embedding, segmentation, alpha=3, add_coordinates=False, quadrupel_loss=True,
     )
 
-    assert pytest.approx(loss) == 4.0
-    assert pytest.approx(np.sum(distances)) == 10
+    assert pytest.approx(float(loss)) == 4.0
+    assert pytest.approx(np.sum(distances.numpy())) == 10
 
 
 def test_add_coordinates():
@@ -569,28 +518,123 @@ def test_add_coordinates():
     embedding = torch.from_numpy(embedding).float()
     segmentation = torch.from_numpy(segmentation)
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        alpha=2,
-        add_coordinates=True,
-        balance=False,
-        name="um_test_simple_unbalanced",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, alpha=2, add_coordinates=True, balance=False,
     )
 
-    assert pytest.approx(loss) == 18 / 36
+    assert pytest.approx(float(loss)) == 18 / 36
     assert (
-        pytest.approx(np.sum(distances))
+        pytest.approx(np.sum(distances.numpy()))
         == 6 * (1 ** 2 + 1 ** 2 + 0 ** 2) ** 0.5 + 2 * (2 ** 2 + 1 ** 2 + 1 ** 2) ** 0.5
     )
 
-    loss, emst, edges_u, edges_v, distances = ultrametric_loss(
-        embedding,
-        segmentation,
-        alpha=2,
-        add_coordinates=False,
-        name="um_test_simple_balanced",
+    loss, emst, edges_u, edges_v, distances, *_ = ultrametric_loss(
+        embedding, segmentation, alpha=2, add_coordinates=False,
     )
 
-    assert pytest.approx(loss) == 2.0
-    assert pytest.approx(np.sum(distances)) == 8
+    assert pytest.approx(float(loss)) == 2.0
+    assert pytest.approx(np.sum(distances.numpy())) == 8
+
+
+@pytest.mark.slow
+def test_gradients():
+    """
+    Naieve test that trains a simple network on a simple
+    example and shows that the loss decreases.
+    Better test would be to calculate the actual expected
+    gradients resulting from a specific loss, and show
+    that the back propogation is working as expected.
+    """
+    n = 50
+
+    embedder = torch.nn.Sequential(
+        torch.nn.Conv2d(2, 3, [3, 3], padding=1),
+        torch.nn.ReLU(),
+        torch.nn.Conv2d(3, 1, [3, 3], padding=1),
+        torch.nn.Tanh(),
+    )
+
+    raw = torch.Tensor(
+        [
+            [
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 2, 0, 0, 0, 0, 2, 0],
+                    [0, 1, 0, 0, 0, 0, 1, 0],
+                    [0, 1, 0, 0, 0, 0, 1, 0],
+                    [0, 1, 0, 0, 0, 0, 1, 0],
+                    [0, 1, 0, 0, 0, 0, 1, 0],
+                    [0, 2, 0, 0, 0, 0, 2, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 2, 0, 0, 0, 0, 2, 0],
+                    [0, 1, 0, 0, 0, 0, 1, 0],
+                    [0, 1, 0, 0, 0, 0, 1, 0],
+                    [0, 1, 0, 0, 0, 0, 1, 0],
+                    [0, 1, 0, 0, 0, 0, 1, 0],
+                    [0, 2, 0, 0, 0, 0, 2, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                ],
+            ]
+        ]
+    )
+    mask = torch.Tensor(
+        [
+            [
+                [
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                    [1, 1, 1, 1, 1, 1, 1, 1],
+                ]
+            ]
+        ]
+    ).bool()
+    gt_labels = torch.Tensor(
+        [
+            [
+                [
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                    [0, 3, 0, 0, 0, 0, 4, 0],
+                    [0, 1, 0, 0, 0, 0, 2, 0],
+                    [0, 1, 0, 0, 0, 0, 2, 0],
+                    [0, 1, 0, 0, 0, 0, 2, 0],
+                    [0, 1, 0, 0, 0, 0, 2, 0],
+                    [0, 5, 0, 0, 0, 0, 6, 0],
+                    [0, 0, 0, 0, 0, 0, 0, 0],
+                ]
+            ]
+        ]
+    ).to(torch.int64)
+
+    embeddings = embedder(raw)
+    optimizer = torch.optim.Adam(embedder.parameters())
+    assert embeddings.shape == (1, 1, 8, 8)
+
+    last_loss = float("inf")
+    embedding_vol = np.zeros([n, 8, 8])
+    for i in range(n):
+        optimizer.zero_grad()
+        embeddings = embedder(raw)
+        embedding_vol[i, :, :] = embeddings.detach().numpy()[0, 0, :, :]
+        loss, *_ = ultrametric_loss(
+            embeddings,
+            gt_labels,
+            mask,
+            alpha=0.5,
+            coordinate_scale=0.2,
+            constrained_emst=False,
+        )
+        assert float(loss) < float(last_loss)
+        assert raw.sum() == 32
+        last_loss = loss
+        loss.backward()
+        optimizer.step()
+    np.save("embeddings.npy", embedding_vol)
+
