@@ -33,13 +33,13 @@ def get_unconstrained_emst(embedding: np.ndarray) -> np.ndarray:
 def get_constrained_emst(embedding: np.ndarray, labels: np.ndarray) -> np.ndarray:
 
     if embedding.shape[0] <= 1:
-        logger.warn("can't compute EMST for %d points", embedding.shape[0])
+        logger.warning("can't compute EMST for %d points", embedding.shape[0])
         return np.zeros((0, 3), dtype=np.float64)
 
     embedding = embedding.astype(np.float64)
     components = np.unique(labels)
     if len(components) <= 1:
-        logger.warn("can't compute constrained EMST for 1 or fewer components")
+        logger.warning("can't compute constrained EMST for 1 or fewer components")
         return compute_emst(embedding)
     num_points = embedding.shape[0]
     indices = np.arange(num_points)
@@ -101,9 +101,9 @@ def get_emst(
         distance)``, where ``u`` and ``v`` are indices of points in
         ``embedding``.
     """
-    embedding = embedding.numpy()
+    embedding = embedding.detach().numpy()
     if constrain_to is not None:
-        constrain_to = constrain_to.numpy()
+        constrain_to = constrain_to.detach().numpy().astype(np.int64)
         emst = get_constrained_emst(embedding, constrain_to)
     else:
         emst = compute_emst(embedding)
@@ -156,7 +156,7 @@ def get_um_loss(
     # passed here just so that tensorflow knows there is dependecy to the
     # ouput.
     (loss, _, ratio_pos, ratio_neg, num_pairs_pos, num_pairs_neg) = um_loss(
-        mst.numpy(), gt_seg.numpy(), float(alpha)
+        mst.numpy(), gt_seg.numpy().astype(np.int64), float(alpha)
     )
 
     return (
@@ -178,7 +178,6 @@ def ultrametric_loss(
     balance: bool = True,
     quadrupel_loss: bool = False,
     constrained_emst: bool = False,
-    name=None,
 ):
     """Returns a tensorflow op to compute the ultra-metric loss on pairs of
     embedding points::
@@ -260,10 +259,6 @@ def ultrametric_loss(
             inside each component of the same label in ``gt_seg``, then between
             the components. This results in a loss that is an upper bound of L.
 
-        name (optional, ``string``):
-
-            An optional name for the operator.
-
     Returns:
 
         A tuple ``(loss, emst, edges_u, edges_v, dist)``, where ``loss`` is a
@@ -287,7 +282,10 @@ def ultrametric_loss(
 
         coordinates = torch.meshgrid(
             *[
-                torch.from_numpy(np.arange(0, image_shape[i] * scale[i], scale[i]))
+                torch.as_tensor(
+                    np.arange(0, image_shape[i] * scale[i], scale[i]),
+                    device=embedding.device,
+                )
                 for i in range(len(image_shape))
             ]
         )
@@ -338,7 +336,8 @@ def ultrametric_loss(
 
     if quadrupel_loss:
         loss, *_ = get_um_loss(emst, dist, gt_seg, alpha)
-        # TODO: Assign gradients and test their assignment
+        # TODO: Assign gradients and test them
+        return (loss, emst, edges_u, edges_v, dist)
     else:
 
         # we need the um_loss just to get the ratio_pos, ratio_neg, and the
@@ -366,4 +365,4 @@ def ultrametric_loss(
 
             loss = (sum_pos + sum_neg) / num_pairs
 
-    return (float(loss), emst, edges_u, edges_v, dist.numpy())
+    return (loss, emst, edges_u, edges_v, dist, ratio_pos, ratio_neg)
