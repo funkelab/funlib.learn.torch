@@ -22,18 +22,18 @@ class ConvPass(torch.nn.Module):
 
         for kernel_size in kernel_sizes:
 
-            dims = len(kernel_size)
+            self.dims = len(kernel_size)
 
             conv = {
                 2: torch.nn.Conv2d,
                 3: torch.nn.Conv3d,
                 4: Conv4d
-            }[dims]
+            }[self.dims]
 
             try:
                 layers.append(conv(in_channels, out_channels, kernel_size))
             except KeyError:
-                raise RuntimeError("%dD convolution not implemented" % dims)
+                raise RuntimeError("%dD convolution not implemented" % self.dims)
 
             in_channels = out_channels
 
@@ -58,13 +58,11 @@ class Downsample(torch.nn.Module):
         self.dims = len(downsample_factor)
         self.downsample_factor = downsample_factor
 
-        dims = len(downsample_factor)
-
         pool = {
             2: torch.nn.MaxPool2d,
             3: torch.nn.MaxPool3d,
             4: torch.nn.MaxPool3d  # only 3D pooling, even for 4D input
-        }[dims]
+        }[self.dims]
 
         self.down = pool(
             downsample_factor,
@@ -359,6 +357,7 @@ class UNet(torch.nn.Module):
                 activation=activation)
             for level in range(self.num_levels)
         ])
+        self.dims = self.l_conv[0].dims
 
         # left downsample layers
         self.l_down = nn.ModuleList([
