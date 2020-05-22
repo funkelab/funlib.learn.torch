@@ -273,7 +273,7 @@ class UNet(torch.nn.Module):
 
             downsample_factors:
 
-                List of lists ``[z, y, x]`` to use to down- and up-sample the
+                List of tuples ``(z, y, x)`` to use to down- and up-sample the
                 feature maps between layers.
 
             kernel_size_down (optional):
