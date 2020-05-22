@@ -179,8 +179,7 @@ def ultrametric_loss(
     quadrupel_loss: bool = False,
     constrained_emst: bool = False,
 ):
-    """Returns a tensorflow op to compute the ultra-metric loss on pairs of
-    embedding points::
+    """The ultra-metric loss on pairs of embedding points::
 
         L = 1/P * sum_p d(p)^2 + 1/N * sum_n max(0, alpha - d(n))^2
 

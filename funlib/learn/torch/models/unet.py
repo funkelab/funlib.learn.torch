@@ -323,6 +323,8 @@ class UNet(torch.nn.Module):
 
         self.num_levels = len(downsample_factors) + 1
         self.num_heads = num_heads
+        self.in_channels = in_channels
+        self.out_channels = num_fmaps_out if num_fmaps_out else num_fmaps
 
         # default arguments
 
