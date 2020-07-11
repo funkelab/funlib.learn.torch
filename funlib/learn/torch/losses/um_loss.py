@@ -1,7 +1,7 @@
 from .impl import um_loss, prune_mst
+from funlib.learn.torch.ext import mlpack as mlp
 
 import numpy as np
-import mlpack as mlp
 import torch
 
 import logging

@@ -40,6 +40,7 @@ setup(
             'funlib.learn.torch.misc',
             'funlib.learn.torch.losses',
             'funlib.learn.torch.losses.impl',
+            'funlib.learn.torch.ext',
         ],
         ext_modules=cythonize([
             Extension(
