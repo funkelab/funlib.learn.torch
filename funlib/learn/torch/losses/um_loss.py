@@ -175,7 +175,7 @@ def ultrametric_loss(
     alpha: float = 0.1,
     add_coordinates: bool = True,
     coordinate_scale: Union[float, List[float]] = 1.0,
-    balance: bool = True,
+    balance: Optional[float] = 0.5,
     quadrupel_loss: bool = False,
     constrained_emst: bool = False,
 ):
@@ -230,15 +230,15 @@ def ultrametric_loss(
 
             How to scale the coordinates, if used to augment the embedding.
 
-        balance (optional, ``bool``):
+        balance (optional, ``float``):
 
-            If ``true`` (the default), the total loss is the sum of positive
+            If ``float`` (the default 0.5), the total loss is the sum of positive
             pair losses and negative pair losses; each divided by the number of
-            positive and negative pairs, respectively. This puts equal emphasis
-            on positive and negative pairs, independent of the number of
-            positive and negative pairs.
+            positive and negative pairs, respectively and multiplied by `balance`
+            and `1-balance`. This puts relative emphasis on positive and negative pairs,
+            independent of the number of positive and negative pairs.
 
-            If ``false``, the total loss is the sum of positive pair losses and
+            If ``none``, the total loss is the sum of positive pair losses and
             negative pair losses, divided by the total number of pairs. This
             puts more emphasis on the set of pairs (positive or negative) that
             occur more frequently::
@@ -348,11 +348,11 @@ def ultrametric_loss(
         loss_pos = dist_squared * ratio_pos
         loss_neg = (torch.max(torch.Tensor([0.0]), alpha - dist)) ** 2 * ratio_neg
 
-        if balance:
+        if balance is not None:
 
             # the ratios returned by get_um_loss are already class balanced,
             # there is nothing more to do than to add the losses up
-            loss = loss_pos.sum() + loss_neg.sum()
+            loss = balance * loss_pos.sum() + (1-balance) * loss_neg.sum()
 
         else:
 
