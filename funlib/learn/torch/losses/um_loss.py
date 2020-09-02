@@ -178,6 +178,7 @@ def ultrametric_loss(
     balance: Optional[float] = 0.5,
     quadrupel_loss: bool = False,
     constrained_emst: bool = False,
+    loss_mode: str = "additive",
 ):
     """The ultra-metric loss on pairs of embedding points::
 
@@ -257,6 +258,16 @@ def ultrametric_loss(
             If set to ``true``, compute the EMST such that it first grows
             inside each component of the same label in ``gt_seg``, then between
             the components. This results in a loss that is an upper bound of L.
+
+        loss_mode (optional, ``str``):
+
+            If "additive" (default), positive and negative losses are added.
+
+            If "multiplicative" positive and negative losses are multiplied.
+
+            Incompatible with quadrupel_loss argument.
+            Incompatible with balance argument (it is dropped since it would merely
+            linearly scale the loss)
 
     Returns:
 
@@ -348,20 +359,30 @@ def ultrametric_loss(
         loss_pos = dist_squared * ratio_pos
         loss_neg = (torch.max(torch.Tensor([0.0]), alpha - dist)) ** 2 * ratio_neg
 
-        if balance is not None:
+        if loss_mode == "additive":
+            if balance is not None:
 
-            # the ratios returned by get_um_loss are already class balanced,
-            # there is nothing more to do than to add the losses up
-            loss = balance * loss_pos.sum() + (1-balance) * loss_neg.sum()
+                # the ratios returned by get_um_loss are already class balanced,
+                # there is nothing more to do than to add the losses up
+                loss = balance * loss_pos.sum() + (1 - balance) * loss_neg.sum()
+
+            else:
+
+                # denormalize the ratios, add them up, and divide by the total
+                # number of pairs
+                sum_pos = loss_pos.sum() * num_pairs_pos
+                sum_neg = loss_neg.sum() * num_pairs_neg
+                num_pairs = num_pairs_pos + num_pairs_neg
+
+                loss = (sum_pos + sum_neg) / num_pairs
+
+        elif loss_mode == "multiplicative":
+            loss = loss_pos * loss_neg
 
         else:
-
-            # denormalize the ratios, add them up, and divide by the total
-            # number of pairs
-            sum_pos = loss_pos.sum() * num_pairs_pos
-            sum_neg = loss_neg.sum() * num_pairs_neg
-            num_pairs = num_pairs_pos + num_pairs_neg
-
-            loss = (sum_pos + sum_neg) / num_pairs
+            raise ValueError(
+                "loss_mode must be chosen from options "
+                f"['additive', 'multiplicative'], not {loss_mode}"
+            )
 
     return (loss, emst, edges_u, edges_v, dist, ratio_pos, ratio_neg)
