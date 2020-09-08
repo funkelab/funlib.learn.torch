@@ -11,8 +11,7 @@ class ConvPass(torch.nn.Module):
             in_channels,
             out_channels,
             kernel_sizes,
-            activation,
-            padding='valid'):
+            activation):
 
         super(ConvPass, self).__init__()
 
@@ -23,28 +22,18 @@ class ConvPass(torch.nn.Module):
 
         for kernel_size in kernel_sizes:
 
-            dims = len(kernel_size)
+            self.dims = len(kernel_size)
 
             conv = {
                 2: torch.nn.Conv2d,
                 3: torch.nn.Conv3d,
                 4: Conv4d
-            }[dims]
-
-            if padding == 'same':
-                pad = tuple(k//2 for k in kernel_size)
-            else:
-                pad = 0
+            }[self.dims]
 
             try:
-                layers.append(
-                    conv(
-                        in_channels,
-                        out_channels,
-                        kernel_size,
-                        padding=pad))
+                layers.append(conv(in_channels, out_channels, kernel_size))
             except KeyError:
-                raise RuntimeError("%dD convolution not implemented" % dims)
+                raise RuntimeError("%dD convolution not implemented" % self.dims)
 
             in_channels = out_channels
 
@@ -229,7 +218,7 @@ class UNet(torch.nn.Module):
             self,
             in_channels,
             num_fmaps,
-            fmap_inc_factor,
+            fmap_inc_factors,
             downsample_factors,
             kernel_size_down=None,
             kernel_size_up=None,
@@ -238,8 +227,7 @@ class UNet(torch.nn.Module):
             voxel_size=(1, 1, 1),
             num_fmaps_out=None,
             num_heads=1,
-            constant_upsample=False,
-            padding='valid'):
+            constant_upsample=False):
         '''Create a U-Net::
 
             f_in --> f_left --------------------------->> f_right--> f_out
@@ -277,7 +265,7 @@ class UNet(torch.nn.Module):
                 number of output feature maps. Stored in the ``channels``
                 dimension.
 
-            fmap_inc_factor:
+            fmap_inc_factors:
 
                 By how much to multiply the number of feature maps between
                 layers. If layer 0 has ``k`` feature maps, layer ``l`` will
@@ -285,7 +273,7 @@ class UNet(torch.nn.Module):
 
             downsample_factors:
 
-                List of lists ``[z, y, x]`` to use to down- and up-sample the
+                List of tuples ``(z, y, x)`` to use to down- and up-sample the
                 feature maps between layers.
 
             kernel_size_down (optional):
@@ -329,10 +317,6 @@ class UNet(torch.nn.Module):
 
                 If set to true, perform a constant upsampling instead of a
                 transposed convolution in the upsampling layers.
-
-            padding (optional):
-
-                How to pad convolutions. Either 'same' or 'valid' (default).
         '''
 
         super(UNet, self).__init__()
@@ -369,13 +353,13 @@ class UNet(torch.nn.Module):
             ConvPass(
                 in_channels
                 if level == 0
-                else num_fmaps*fmap_inc_factor**(level - 1),
-                num_fmaps*fmap_inc_factor**level,
+                else num_fmaps*fmap_inc_factors**(level - 1),
+                num_fmaps*fmap_inc_factors**level,
                 kernel_size_down[level],
-                activation=activation,
-                padding=padding)
+                activation=activation)
             for level in range(self.num_levels)
         ])
+        self.dims = self.l_conv[0].dims
 
         # left downsample layers
         self.l_down = nn.ModuleList([
@@ -389,8 +373,8 @@ class UNet(torch.nn.Module):
                 Upsample(
                     downsample_factors[level],
                     mode='nearest' if constant_upsample else 'transposed_conv',
-                    in_channels=num_fmaps*fmap_inc_factor**(level + 1),
-                    out_channels=num_fmaps*fmap_inc_factor**(level + 1),
+                    in_channels=num_fmaps*fmap_inc_factors**(level + 1),
+                    out_channels=num_fmaps*fmap_inc_factors**(level + 1),
                     crop_factor=crop_factors[level],
                     next_conv_kernel_sizes=kernel_size_up[level])
                 for level in range(self.num_levels - 1)
@@ -402,14 +386,13 @@ class UNet(torch.nn.Module):
         self.r_conv = nn.ModuleList([
             nn.ModuleList([
                 ConvPass(
-                    num_fmaps*fmap_inc_factor**level +
-                    num_fmaps*fmap_inc_factor**(level + 1),
-                    num_fmaps*fmap_inc_factor**level
+                    num_fmaps*fmap_inc_factors**level +
+                    num_fmaps*fmap_inc_factors**(level + 1),
+                    num_fmaps*fmap_inc_factors**level
                     if num_fmaps_out is None or level != 0
                     else num_fmaps_out,
                     kernel_size_up[level],
-                    activation=activation,
-                    padding=padding)
+                    activation=activation)
                 for level in range(self.num_levels - 1)
             ])
             for _ in range(num_heads)
