@@ -10,7 +10,16 @@ class Vgg3D(torch.nn.Module):
             input_size,
             fmaps=32,
             downsample_factors=[(2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2)],
+            fmap_inc=(2,2,2,2),
+            n_convolutions=(2,2,2,2),
             output_classes=6):
+
+        if len(downsample_factors) != len(fmap_inc):
+            raise ValueError("fmap_inc needs to have same length as downsample factors")
+        if len(n_convolutions) != len(fmap_inc):
+            raise ValueError("n_convolutions needs to have the same length as downsample factors")
+        if np.any(np.array(n_convolutions) < 1):
+            raise ValueError("Each layer must have at least one convolution")
 
         super(Vgg3D, self).__init__()
 
@@ -19,7 +28,6 @@ class Vgg3D(torch.nn.Module):
 
         features = []
         for i in range(len(downsample_factors)):
-
             features += [
                 torch.nn.Conv3d(
                     current_fmaps,
@@ -27,19 +35,21 @@ class Vgg3D(torch.nn.Module):
                     kernel_size=3,
                     padding=1),
                 torch.nn.BatchNorm3d(fmaps),
-                torch.nn.ReLU(inplace=True),
-                torch.nn.Conv3d(
-                    fmaps,
-                    fmaps,
-                    kernel_size=3,
-                    padding=1),
-                torch.nn.BatchNorm3d(fmaps),
-                torch.nn.ReLU(inplace=True),
-                torch.nn.MaxPool3d(downsample_factors[i])
-            ]
+                torch.nn.ReLU(inplace=True)]
+            
+            for n in range(n_convolutions[i]-1):
+                features += [torch.nn.Conv3d(
+                                fmaps,
+                                fmaps,
+                                kernel_size=3,
+                                padding=1),
+                             torch.nn.BatchNorm3d(fmaps),
+                             torch.nn.ReLU(inplace=True)]
+
+            features += [torch.nn.MaxPool3d(downsample_factors[i])]
 
             current_fmaps = fmaps
-            fmaps *= 2
+            fmaps *= fmap_inc[i]
 
             size = tuple(
                 int(c/d)
