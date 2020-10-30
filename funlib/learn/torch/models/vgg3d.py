@@ -13,7 +13,8 @@ class Vgg3D(torch.nn.Module):
             downsample_factors=[(2, 2, 2), (2, 2, 2), (2, 2, 2), (2, 2, 2)],
             fmap_inc=(2,2,2,2),
             n_convolutions=(2,2,2,2),
-            output_classes=6):
+            output_classes=6,
+            input_fmaps=1):
 
         if len(downsample_factors) != len(fmap_inc):
             raise ValueError("fmap_inc needs to have same length as downsample factors")
@@ -24,7 +25,7 @@ class Vgg3D(torch.nn.Module):
 
         super(Vgg3D, self).__init__()
 
-        current_fmaps = 1
+        current_fmaps = input_fmaps
         current_size = tuple(input_size)
 
         features = []
@@ -95,15 +96,11 @@ class Vgg3D(torch.nn.Module):
         print(self)
 
     def forward(self, raw):
-        shape = tuple(raw.shape)
-        raw_with_channels = raw.reshape(
-            shape[0],
-            1,
-            shape[1],
-            shape[2],
-            shape[3])
+        """
+        expects raw to have both a batch and a channel dimension
+        """
 
-        f = self.features(raw_with_channels)
+        f = self.features(raw)
         f = f.view(f.size(0), -1)
         y = self.classifier(f)
 
