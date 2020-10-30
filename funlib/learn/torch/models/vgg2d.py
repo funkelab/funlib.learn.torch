@@ -10,11 +10,12 @@ class Vgg2D(torch.nn.Module):
             input_size,
             fmaps=32,
             downsample_factors=[(2, 2), (2, 2), (2, 2), (2, 2)],
-            output_classes=6):
+            output_classes=6,
+            input_fmaps=1):
 
         super(Vgg2D, self).__init__()
 
-        current_fmaps = 1
+        current_fmaps = input_fmaps
         current_size = tuple(input_size)
 
         features = []
@@ -83,16 +84,8 @@ class Vgg2D(torch.nn.Module):
         print(self)
 
     def forward(self, raw):
-        shape = tuple(raw.shape)
 
-        raw_with_channels = raw.reshape(
-            shape[0],
-            1,
-            shape[1],
-            shape[2])
-
-
-        f = self.features(raw_with_channels)
+        f = self.features(raw)
         f = f.view(f.size(0), -1)
         y = self.classifier(f)
 
