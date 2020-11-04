@@ -352,7 +352,7 @@ class UNet(torch.nn.Module):
         # compute crop factors for translation equivariance
         crop_factors = []
         factor_product = None
-        for factor in downsample_factors:
+        for factor in downsample_factors[::-1]:
             if factor_product is None:
                 factor_product = list(factor)
             else:
