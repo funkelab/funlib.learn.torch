@@ -1,7 +1,6 @@
 from setuptools import setup
 from setuptools.extension import Extension
 from distutils.sysconfig import get_python_inc, get_config_var
-from Cython.Build import cythonize
 import os
 
 import numpy as np
@@ -34,6 +33,9 @@ setup(
         author='Funkelab',
         author_email='funkej@janelia.hhmi.org',
         license='MIT',
+        setup_requires=[
+            'cython'
+        ],
         packages=[
             'funlib.learn.torch',
             'funlib.learn.torch.models',
@@ -42,7 +44,7 @@ setup(
             'funlib.learn.torch.losses.impl',
             'funlib.learn.torch.ext',
         ],
-        ext_modules=cythonize([
+        ext_modules=[
             Extension(
                 'funlib.learn.torch.losses.impl.wrappers',
                 sources=[
@@ -54,5 +56,5 @@ setup(
                 extra_link_args=['-std=c++11'],
                 extra_compile_args=['-O3', '-std=c++11'],
                 language='c++')
-        ])
+        ]
 )
