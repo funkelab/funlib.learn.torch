@@ -1,5 +1,5 @@
 from __future__ import absolute_import
 
-from . import models, misc, losses
+from . import models, misc
 
-__all__ = ['models', 'misc', 'losses']
+__all__ = ['models', 'misc']
