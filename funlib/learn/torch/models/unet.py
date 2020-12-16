@@ -358,7 +358,7 @@ class UNet(torch.nn.Module):
                 factor_product = list(
                     f*ff
                     for f, ff in zip(factor, factor_product))
-        crop_factor = factor_product
+        self.crop_factor = factor_product
 
         # modules
 
@@ -390,7 +390,7 @@ class UNet(torch.nn.Module):
                     mode='nearest' if constant_upsample else 'transposed_conv',
                     in_channels=num_fmaps*fmap_inc_factor**(level + 1),
                     out_channels=num_fmaps*fmap_inc_factor**(level + 1),
-                    crop_factor=(crop_factor if level == self.num_levels - 2
+                    crop_factor=(self.crop_factor if level == self.num_levels - 2
                                  else None),
                     next_conv_kernel_sizes=(kernel_size_up[level]
                                             if level == self.num_levels - 2
@@ -455,6 +455,11 @@ class UNet(torch.nn.Module):
     def forward(self, x):
 
         y = self.rec_forward(self.num_levels - 1, x)
+
+        if self.training:
+            out_spatial_shape = y.size()[-self.dims:]
+            assert out_spatial_shape > self.crop_factor, \
+                "To avoid tile-and-stitch inconsistencies, the output size during training has to be strictly larger than prod(downsample_factors) (output {}, prod(downsample_factors) {} (= crop_factor))".format(out_spatial_shape, self.crop_factor)
 
         if self.num_heads == 1:
             return y[0]
