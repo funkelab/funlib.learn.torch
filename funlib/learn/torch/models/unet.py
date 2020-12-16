@@ -210,7 +210,7 @@ class Upsample(torch.nn.Module):
 
         g_up = self.up(g_out)
 
-        if self.next_conv_kernel_sizes is not None:
+        if not self.training and self.next_conv_kernel_sizes is not None:
             g_cropped = self.crop_to_factor(
                 g_up,
                 self.crop_factor,
@@ -350,7 +350,6 @@ class UNet(torch.nn.Module):
             kernel_size_up = [[(3, 3, 3), (3, 3, 3)]]*(self.num_levels - 1)
 
         # compute crop factors for translation equivariance
-        crop_factors = []
         factor_product = None
         for factor in downsample_factors[::-1]:
             if factor_product is None:
@@ -359,8 +358,7 @@ class UNet(torch.nn.Module):
                 factor_product = list(
                     f*ff
                     for f, ff in zip(factor, factor_product))
-            crop_factors.append(factor_product)
-        crop_factors = crop_factors[::-1]
+        self.crop_factor = factor_product
 
         # modules
 
@@ -392,8 +390,11 @@ class UNet(torch.nn.Module):
                     mode='nearest' if constant_upsample else 'transposed_conv',
                     in_channels=num_fmaps*fmap_inc_factor**(level + 1),
                     out_channels=num_fmaps*fmap_inc_factor**(level + 1),
-                    crop_factor=crop_factors[level],
-                    next_conv_kernel_sizes=kernel_size_up[level])
+                    crop_factor=(self.crop_factor if level == self.num_levels - 2
+                                 else None),
+                    next_conv_kernel_sizes=(kernel_size_up[level]
+                                            if level == self.num_levels - 2
+                                            else None))
                 for level in range(self.num_levels - 1)
             ])
             for _ in range(num_heads)
@@ -454,6 +455,11 @@ class UNet(torch.nn.Module):
     def forward(self, x):
 
         y = self.rec_forward(self.num_levels - 1, x)
+
+        if self.training:
+            out_spatial_shape = y.size()[-self.dims:]
+            assert out_spatial_shape > self.crop_factor, \
+                "To avoid tile-and-stitch inconsistencies, the output size during training has to be strictly larger than prod(downsample_factors) (output {}, prod(downsample_factors) {} (= crop_factor))".format(out_spatial_shape, self.crop_factor)
 
         if self.num_heads == 1:
             return y[0]
