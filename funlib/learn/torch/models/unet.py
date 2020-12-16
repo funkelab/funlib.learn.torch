@@ -210,7 +210,7 @@ class Upsample(torch.nn.Module):
 
         g_up = self.up(g_out)
 
-        if self.next_conv_kernel_sizes is not None:
+        if not self.training and self.next_conv_kernel_sizes is not None:
             g_cropped = self.crop_to_factor(
                 g_up,
                 self.crop_factor,
