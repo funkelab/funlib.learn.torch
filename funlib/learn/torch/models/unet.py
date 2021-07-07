@@ -392,8 +392,9 @@ class UNet(torch.nn.Module):
                     mode='nearest' if constant_upsample else 'transposed_conv',
                     in_channels=num_fmaps*fmap_inc_factor**(level + 1),
                     out_channels=num_fmaps*fmap_inc_factor**(level + 1),
-                    crop_factor=crop_factors[level],
-                    next_conv_kernel_sizes=kernel_size_up[level])
+                    crop_factor=crop_factors[level] if padding != 'same' else None,
+                    next_conv_kernel_sizes=self.kernel_size_up[level] if padding != 'same' else None
+                )
                 for level in range(self.num_levels - 1)
             ])
             for _ in range(num_heads)

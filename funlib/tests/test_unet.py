@@ -14,7 +14,7 @@ class TestUNet(unittest.TestCase):
         unet = models.UNet(
             in_channels=1,
             num_fmaps=3,
-            fmap_inc_factors=2,
+            fmap_inc_factor=2,
             downsample_factors=[[2, 2, 2], [2, 2, 2]])
 
         x = np.zeros((1, 1, 100, 80, 48), dtype=np.float64)
@@ -27,7 +27,7 @@ class TestUNet(unittest.TestCase):
         unet = models.UNet(
             in_channels=1,
             num_fmaps=3,
-            fmap_inc_factors=2,
+            fmap_inc_factor=2,
             downsample_factors=[[2, 2, 2], [2, 2, 2]],
             num_fmaps_out=5)
 
@@ -45,7 +45,7 @@ class TestUNet(unittest.TestCase):
             unet = models.UNet(
                 in_channels=1,
                 num_fmaps=3,
-                fmap_inc_factors=2,
+                fmap_inc_factor=2,
                 downsample_factors=[[2, 3, 2], [2, 2, 2]],
                 num_fmaps_out=5)
             unet.forward(x).data.numpy()
@@ -58,7 +58,7 @@ class TestUNet(unittest.TestCase):
         unet = models.UNet(
             in_channels=1,
             num_fmaps=3,
-            fmap_inc_factors=2,
+            fmap_inc_factor=2,
             downsample_factors=[[2, 2, 2], [2, 2, 2]],
             num_heads=3)
 
@@ -71,3 +71,19 @@ class TestUNet(unittest.TestCase):
         assert y[0].data.numpy().shape == (1, 3, 60, 40, 8)
         assert y[1].data.numpy().shape == (1, 3, 60, 40, 8)
         assert y[2].data.numpy().shape == (1, 3, 60, 40, 8)
+
+    def test_same_padding(self):
+
+        unet = models.UNet(
+            in_channels=1,
+            num_fmaps=1,
+            fmap_inc_factor=2,
+            downsample_factors=[[2, 2, 2], [2, 2, 2]],
+            padding='same')
+
+        x = np.zeros((1, 1, 100, 80, 48), dtype=np.float64)
+        x = torch.from_numpy(x).float()
+
+        y = unet.forward(x).data.numpy()
+
+        assert y.shape == x.shape
