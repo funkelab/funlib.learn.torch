@@ -106,12 +106,11 @@ class Upsample(torch.nn.Module):
 
         super(Upsample, self).__init__()
 
-        assert (crop_factor is None) == (next_conv_kernel_sizes is None), \
-            "crop_factor and next_conv_kernel_sizes have to be given together"
+        if crop_factor is not None:
+            assert next_conv_kernel_sizes is not None, "crop_factor and next_conv_kernel_sizes have to be given together"
 
         self.crop_factor = crop_factor
         self.next_conv_kernel_sizes = next_conv_kernel_sizes
-
         self.dims = len(scale_factor)
 
         if mode == 'transposed_conv':
@@ -210,7 +209,7 @@ class Upsample(torch.nn.Module):
 
         g_up = self.up(g_out)
 
-        if self.next_conv_kernel_sizes is not None:
+        if self.crop_factor is not None:
             g_cropped = self.crop_to_factor(
                 g_up,
                 self.crop_factor,
@@ -337,6 +336,7 @@ class UNet(torch.nn.Module):
 
         super(UNet, self).__init__()
 
+        self.ndims = len(downsample_factors[0])
         self.num_levels = len(downsample_factors) + 1
         self.num_heads = num_heads
         self.in_channels = in_channels
@@ -345,20 +345,25 @@ class UNet(torch.nn.Module):
         # default arguments
 
         if kernel_size_down is None:
-            kernel_size_down = [[(3, 3, 3), (3, 3, 3)]]*self.num_levels
+            kernel_size_down = [[(3,)*self.ndims, (3,)*self.ndims]]*self.num_levels
         if kernel_size_up is None:
-            kernel_size_up = [[(3, 3, 3), (3, 3, 3)]]*(self.num_levels - 1)
+            kernel_size_up = [[(3,)*self.ndims, (3,)*self.ndims]]*(self.num_levels - 1)
 
         # compute crop factors for translation equivariance
         crop_factors = []
         factor_product = None
         for factor in downsample_factors[::-1]:
-            if factor_product is None:
-                factor_product = list(factor)
+            if padding.lower() == 'valid':
+                if factor_product is None:
+                    factor_product = list(factor)
+                else:
+                    factor_product = list(
+                        f*ff
+                        for f, ff in zip(factor, factor_product))
+            elif padding.lower() == 'same':
+                factor_product = None
             else:
-                factor_product = list(
-                    f*ff
-                    for f, ff in zip(factor, factor_product))
+                raise f'Invalid padding option: {padding}'
             crop_factors.append(factor_product)
         crop_factors = crop_factors[::-1]
 
