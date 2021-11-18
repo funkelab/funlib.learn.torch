@@ -14,7 +14,7 @@ class TestUNet(unittest.TestCase):
         unet = models.UNet(
             in_channels=1,
             num_fmaps=3,
-            fmap_inc_factors=2,
+            fmap_inc_factor=2,
             downsample_factors=[[2, 2, 2], [2, 2, 2]])
 
         x = np.zeros((1, 1, 100, 80, 48), dtype=np.float64)
@@ -27,7 +27,7 @@ class TestUNet(unittest.TestCase):
         unet = models.UNet(
             in_channels=1,
             num_fmaps=3,
-            fmap_inc_factors=2,
+            fmap_inc_factor=2,
             downsample_factors=[[2, 2, 2], [2, 2, 2]],
             num_fmaps_out=5)
 
@@ -45,7 +45,7 @@ class TestUNet(unittest.TestCase):
             unet = models.UNet(
                 in_channels=1,
                 num_fmaps=3,
-                fmap_inc_factors=2,
+                fmap_inc_factor=2,
                 downsample_factors=[[2, 3, 2], [2, 2, 2]],
                 num_fmaps_out=5)
             unet.forward(x).data.numpy()
@@ -58,7 +58,7 @@ class TestUNet(unittest.TestCase):
         unet = models.UNet(
             in_channels=1,
             num_fmaps=3,
-            fmap_inc_factors=2,
+            fmap_inc_factor=2,
             downsample_factors=[[2, 2, 2], [2, 2, 2]],
             num_heads=3)
 
