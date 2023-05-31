@@ -81,8 +81,6 @@ class Vgg2D(torch.nn.Module):
 
         self.classifier = torch.nn.Sequential(*classifier)
 
-        print(self)
-
     def forward(self, raw):
 
         f = self.features(raw)

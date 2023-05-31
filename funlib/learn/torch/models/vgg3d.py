@@ -93,8 +93,6 @@ class Vgg3D(torch.nn.Module):
 
         self.classifier = torch.nn.Sequential(*classifier)
 
-        print(self)
-
     def forward(self, raw):
         """
         expects raw to have both a batch and a channel dimension
