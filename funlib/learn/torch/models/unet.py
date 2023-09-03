@@ -102,7 +102,8 @@ class Upsample(torch.nn.Module):
             in_channels=None,
             out_channels=None,
             crop_factor=None,
-            next_conv_kernel_sizes=None):
+            next_conv_kernel_sizes=None,
+            padding='valid'):
 
         super(Upsample, self).__init__()
 
@@ -132,6 +133,8 @@ class Upsample(torch.nn.Module):
             self.up = torch.nn.Upsample(
                 scale_factor=scale_factor,
                 mode=mode)
+
+        self.padding = padding
 
     def crop_to_factor(self, x, factor, kernel_sizes):
         '''Crop feature maps to ensure translation equivariance with stride of
@@ -210,7 +213,7 @@ class Upsample(torch.nn.Module):
 
         g_up = self.up(g_out)
 
-        if self.next_conv_kernel_sizes is not None:
+        if self.next_conv_kernel_sizes is not None and self.padding == 'valid':
             g_cropped = self.crop_to_factor(
                 g_up,
                 self.crop_factor,
@@ -393,7 +396,8 @@ class UNet(torch.nn.Module):
                     in_channels=num_fmaps*fmap_inc_factor**(level + 1),
                     out_channels=num_fmaps*fmap_inc_factor**(level + 1),
                     crop_factor=crop_factors[level],
-                    next_conv_kernel_sizes=kernel_size_up[level])
+                    next_conv_kernel_sizes=kernel_size_up[level],
+                    padding=padding)
                 for level in range(self.num_levels - 1)
             ])
             for _ in range(num_heads)
