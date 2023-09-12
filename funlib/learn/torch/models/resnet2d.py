@@ -29,17 +29,9 @@ class ResNet(nn.Module):
         self.layer4 = self.make_layer(ResidualBlock, current_channels, 2, 2)
         size /= 2
         size = int(math.ceil(size))
-
-        fc = [torch.nn.Linear(current_channels*size**2, 4096),
-              torch.nn.ReLU(),
-              torch.nn.Dropout(),
-              torch.nn.Linear(4096, 4096),
-              torch.nn.ReLU(),
-              torch.nn.Dropout(),
-              torch.nn.Linear(4096,output_classes)]
-
-        self.fc = torch.nn.Sequential(*fc)
-        print(self)
+        
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(current_channels, output_classes)
 
     def make_layer(self, block, out_channels, blocks, stride=1):
         downsample = None
@@ -54,14 +46,15 @@ class ResNet(nn.Module):
             layers.append(block(out_channels, out_channels))
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.conv(x)
         out = self.bn(out)
         out = self.layer1(out)
         out = self.layer2(out)
         out = self.layer3(out)
         out = self.layer4(out)
-        out = out.view(out.size(0), -1)
+        out = self.avgpool(out)
+        out = torch.flatten(out, 1)
         out = self.fc(out)
         return out
 
