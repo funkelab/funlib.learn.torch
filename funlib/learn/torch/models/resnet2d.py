@@ -3,15 +3,22 @@
 """
 import torch
 from torch import nn
-import math
 
 
-class ResNet(nn.Module):
-    def __init__(self, output_classes, input_size=(128,128), input_channels=1):
-        super(ResNet, self).__init__()
-        self.in_channels = 12
-        size = input_size[0]
-        self.conv = nn.Conv2d(input_channels, self.in_channels, kernel_size=3,
+class ResNet2D(nn.Module):
+    def __init__(self, output_classes, input_channels=1, start_channels=12):
+        """
+        Args:
+            output_classes: Number of output classes
+
+            input_size: Size of input images
+
+            input_channels: Number of input channels
+
+            start_channels: Number of channels in first convolutional layer
+        """
+        super(ResNet2D, self).__init__()
+        self.conv = nn.Conv2d(input_channels, start_channels, kernel_size=3,
                               padding=1, stride=1, bias=True)
         self.bn = nn.BatchNorm2d(self.in_channels)
         self.relu = nn.ReLU()
@@ -19,16 +26,11 @@ class ResNet(nn.Module):
         current_channels = self.in_channels
         self.layer1 = self.make_layer(ResidualBlock, current_channels, 2, 2)
         current_channels *= 2
-        size /= 2
         self.layer2 = self.make_layer(ResidualBlock, current_channels, 2, 2)
         current_channels *= 2
-        size /= 2
         self.layer3 = self.make_layer(ResidualBlock, current_channels, 2, 2)
         current_channels *= 2
-        size /= 2
         self.layer4 = self.make_layer(ResidualBlock, current_channels, 2, 2)
-        size /= 2
-        size = int(math.ceil(size))
         
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(current_channels, output_classes)
