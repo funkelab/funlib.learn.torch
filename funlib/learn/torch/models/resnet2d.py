@@ -18,7 +18,8 @@ class ResNet2D(nn.Module):
             start_channels: Number of channels in first convolutional layer
         """
         super(ResNet2D, self).__init__()
-        self.conv = nn.Conv2d(input_channels, start_channels, kernel_size=3,
+        self.in_channels = start_channels
+        self.conv = nn.Conv2d(input_channels, self.in_channels, kernel_size=3,
                               padding=1, stride=1, bias=True)
         self.bn = nn.BatchNorm2d(self.in_channels)
         self.relu = nn.ReLU()
