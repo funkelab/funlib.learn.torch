@@ -3,21 +3,21 @@ import torch
 
 
 class Conv4d(torch.nn.Module):
-
     def __init__(
-            self,
-            in_channels,
-            out_channels,
-            kernel_size,
-            stride=1,
-            padding=0,
-            padding_mode='zeros',
-            dilation=1,
-            groups=1,
-            bias=True,
-            bias_initializer=None,
-            kernel_initializer=None):
-        '''
+        self,
+        in_channels,
+        out_channels,
+        kernel_size,
+        stride=1,
+        padding=0,
+        padding_mode="zeros",
+        dilation=1,
+        groups=1,
+        bias=True,
+        bias_initializer=None,
+        kernel_initializer=None,
+    ):
+        """
         Performs a 4D convolution of the ``(t, z, y, x)`` dimensions of a
         tensor with shape ``(b, c, l, d, h, w)`` with ``k`` filters. The output
         tensor will be of shape ``(b, k, l', d', h', w')``. ``(l', d', h',
@@ -131,7 +131,7 @@ class Conv4d(torch.nn.Module):
                     [3,3,1] +
                     [1,1,0] +
                 ) = [6,7,3]
-        '''
+        """
 
         super(Conv4d, self).__init__()
 
@@ -139,14 +139,10 @@ class Conv4d(torch.nn.Module):
         # Assertions for constructor arguments
         # ---------------------------------------------------------------------
 
-        assert len(kernel_size) == 4, \
-            '4D kernel size expected!'
-        assert stride == 1, \
-            'Strides other than 1 not yet implemented!'
-        assert dilation == 1, \
-            'Dilation rate other than 1 not yet implemented!'
-        assert groups == 1, \
-            'Groups other than 1 not yet implemented!'
+        assert len(kernel_size) == 4, "4D kernel size expected!"
+        assert stride == 1, "Strides other than 1 not yet implemented!"
+        assert dilation == 1, "Dilation rate other than 1 not yet implemented!"
+        assert groups == 1, "Groups other than 1 not yet implemented!"
 
         # ---------------------------------------------------------------------
         # Store constructor arguments
@@ -173,12 +169,13 @@ class Conv4d(torch.nn.Module):
         self.conv3d_layers = torch.nn.ModuleList()
 
         for i in range(l_k):
-
             # Initialize a Conv3D layer
-            conv3d_layer = torch.nn.Conv3d(in_channels=self.in_channels,
-                                           out_channels=self.out_channels,
-                                           kernel_size=(d_k, h_k, w_k),
-                                           padding=self.padding)
+            conv3d_layer = torch.nn.Conv3d(
+                in_channels=self.in_channels,
+                out_channels=self.out_channels,
+                kernel_size=(d_k, h_k, w_k),
+                padding=self.padding,
+            )
 
             # Apply initializer functions to weight and bias tensor
             if self.kernel_initializer is not None:
@@ -192,7 +189,6 @@ class Conv4d(torch.nn.Module):
     # -------------------------------------------------------------------------
 
     def forward(self, input):
-
         # Define shortcut names for dimensions of input and kernel
         (b, c_i, l_i, d_i, h_i, w_i) = tuple(input.shape)
         (l_k, d_k, h_k, w_k) = self.kernel_size
@@ -205,17 +201,15 @@ class Conv4d(torch.nn.Module):
 
         # Convolve each kernel frame i with each input frame j
         for i in range(l_k):
-
             for j in range(l_i):
-
                 # Add results to this output frame
                 out_frame = j - (i - l_k // 2) - (l_i - l_o) // 2
                 if out_frame < 0 or out_frame >= l_o:
                     continue
 
-                frame_conv3d = \
-                    self.conv3d_layers[i](input[:, :, j, :]
-                                          .view(b, c_i, d_i, h_i, w_i))
+                frame_conv3d = self.conv3d_layers[i](
+                    input[:, :, j, :].view(b, c_i, d_i, h_i, w_i)
+                )
 
                 if frame_results[out_frame] is None:
                     frame_results[out_frame] = frame_conv3d

@@ -1,14 +1,10 @@
 import numpy as np
+
 import torch
 import torch.nn.functional as F
 
 
-def get_integrated_gradients(
-        model,
-        raw,
-        baseline,
-        target_id,
-        integration_steps=50):
+def get_integrated_gradients(model, raw, baseline, target_id, integration_steps=50):
     """
     Given a pytorch model whose output are class logits this function returns
     integrated gradients for any given input and baselinea.
@@ -36,7 +32,7 @@ def get_integrated_gradients(
         number of steps between baseline and raw to consider for integration
     """
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     gradients = []
     # Get inputs on line between baseline and raw
@@ -44,9 +40,8 @@ def get_integrated_gradients(
     for in_raw in inputs:
         # predict
         in_raw_tensor = torch.tensor(
-            in_raw.astype(np.float32),
-            device=device,
-            requires_grad=True)
+            in_raw.astype(np.float32), device=device, requires_grad=True
+        )
         output = model(raw=in_raw_tensor)
         output = F.softmax(output, dim=1)
 
@@ -66,7 +61,6 @@ def get_integrated_gradients(
 
 def get_inputs(baseline, raw, steps):
     inputs = [
-        baseline + (float(i)/steps) * (raw - baseline)
-        for i in range(0, steps+1)
+        baseline + (float(i) / steps) * (raw - baseline) for i in range(0, steps + 1)
     ]
     return inputs

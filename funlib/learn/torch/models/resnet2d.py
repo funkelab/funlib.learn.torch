@@ -1,6 +1,7 @@
 """
 2D ResNet implementation based on code from https://github.com/funkelab/dapi/blob/main/dapi_networks/ResNet.py
 """
+
 import torch
 from torch import nn
 
@@ -19,8 +20,14 @@ class ResNet2D(nn.Module):
         """
         super(ResNet2D, self).__init__()
         self.in_channels = start_channels
-        self.conv = nn.Conv2d(input_channels, self.in_channels, kernel_size=3,
-                              padding=1, stride=1, bias=True)
+        self.conv = nn.Conv2d(
+            input_channels,
+            self.in_channels,
+            kernel_size=3,
+            padding=1,
+            stride=1,
+            bias=True,
+        )
         self.bn = nn.BatchNorm2d(self.in_channels)
         self.relu = nn.ReLU()
 
@@ -32,16 +39,24 @@ class ResNet2D(nn.Module):
         self.layer3 = self.make_layer(ResidualBlock, current_channels, 2, 2)
         current_channels *= 2
         self.layer4 = self.make_layer(ResidualBlock, current_channels, 2, 2)
-        
+
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(current_channels, output_classes)
 
     def make_layer(self, block, out_channels, blocks, stride=1):
         downsample = None
-        if  (stride != 1) or self.in_channels != out_channels:
+        if (stride != 1) or self.in_channels != out_channels:
             downsample = nn.Sequential(
-                nn.Conv2d(self.in_channels, out_channels, kernel_size=3, padding=1, stride=stride, bias=True),
-                nn.BatchNorm2d(out_channels))
+                nn.Conv2d(
+                    self.in_channels,
+                    out_channels,
+                    kernel_size=3,
+                    padding=1,
+                    stride=stride,
+                    bias=True,
+                ),
+                nn.BatchNorm2d(out_channels),
+            )
         layers = []
         layers.append(block(self.in_channels, out_channels, stride, downsample))
         self.in_channels = out_channels
@@ -67,12 +82,19 @@ class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1, downsample=None):
         super(ResidualBlock, self).__init__()
         # Biases are handled by BN layers
-        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3,
-                               padding=1, stride=stride, bias=True)
+        self.conv1 = nn.Conv2d(
+            in_channels,
+            out_channels,
+            kernel_size=3,
+            padding=1,
+            stride=stride,
+            bias=True,
+        )
         self.bn1 = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU()
-        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3,
-                               padding=1, bias=True)
+        self.conv2 = nn.Conv2d(
+            out_channels, out_channels, kernel_size=3, padding=1, bias=True
+        )
         self.bn2 = nn.BatchNorm2d(out_channels)
         self.downsample = downsample
 
