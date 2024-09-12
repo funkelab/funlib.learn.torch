@@ -1,0 +1,32 @@
+[project]
+name = "funlib.learn.torch"
+description = "Useful torch utilities for training and inference"
+license = { text = "MIT" }
+readme = "README.md"
+authors = [
+    { name = "Jan Funke", email = "funkej@hhmi.org" },
+    { name = "William Patton", email = "wllmpttn24@gmail.com" },
+]
+dynamic = ['version']
+
+requires-python = ">=3.11"
+classifiers = ["Programming Language :: Python :: 3"]
+keywords = []
+
+dependencies = [
+    "torch",
+    "numpy",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "funlib.learn.torch.__version__" }
+
+[project.optional-dependencies]
+dev = ['pytest', 'pytest-cov', 'ruff', 'mypy']
+
+[tool.ruff]
+# pyflakes, pycodestyle, isort
+lint.select = ["F", "W", "I001"]
+
+[tool.setuptools.package-data]
+"funlib.learn.torch" = ["py.typed"]
