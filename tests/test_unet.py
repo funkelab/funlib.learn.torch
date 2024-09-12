@@ -1,21 +1,23 @@
-from funlib.learn.torch import models
+import unittest
+import warnings
+
 import numpy as np
 import pytest
 import torch
-import unittest
-import warnings
+
+from funlib.learn.torch import models
+
 warnings.filterwarnings("error")
 
 
 class TestUNet(unittest.TestCase):
-
     def test_creation(self):
-
         unet = models.UNet(
             in_channels=1,
             num_fmaps=3,
             fmap_inc_factor=2,
-            downsample_factors=[[2, 2, 2], [2, 2, 2]])
+            downsample_factors=[[2, 2, 2], [2, 2, 2]],
+        )
 
         x = np.zeros((1, 1, 100, 80, 48), dtype=np.float64)
         x = torch.from_numpy(x).float()
@@ -29,14 +31,14 @@ class TestUNet(unittest.TestCase):
             num_fmaps=3,
             fmap_inc_factor=2,
             downsample_factors=[[2, 2, 2], [2, 2, 2]],
-            num_fmaps_out=5)
+            num_fmaps_out=5,
+        )
 
         y = unet.forward(x).data.numpy()
 
         assert y.shape == (1, 5, 60, 40, 8)
 
     def test_shape_warning(self):
-
         x = np.zeros((1, 1, 100, 80, 48), dtype=np.float64)
         x = torch.from_numpy(x).float()
 
@@ -47,20 +49,21 @@ class TestUNet(unittest.TestCase):
                 num_fmaps=3,
                 fmap_inc_factor=2,
                 downsample_factors=[[2, 3, 2], [2, 2, 2]],
-                num_fmaps_out=5)
+                num_fmaps_out=5,
+            )
             unet.forward(x).data.numpy()
 
     # def test_4d(self):
-        # TODO
+    # TODO
 
     def test_multi_head(self):
-
         unet = models.UNet(
             in_channels=1,
             num_fmaps=3,
             fmap_inc_factor=2,
             downsample_factors=[[2, 2, 2], [2, 2, 2]],
-            num_heads=3)
+            num_heads=3,
+        )
 
         x = np.zeros((1, 1, 100, 80, 48), dtype=np.float64)
         x = torch.from_numpy(x).float()

@@ -1,9 +1,10 @@
-from funlib.learn.torch import models
-import numpy as np
-import pytest
-import torch
 import unittest
 import warnings
+
+import numpy as np
+import torch
+
+from funlib.learn.torch import models
 
 warnings.filterwarnings("error")
 

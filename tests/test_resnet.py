@@ -1,5 +1,6 @@
-from funlib.learn.torch.models import ResNet2D, ResNet3D
 import torch
+
+from funlib.learn.torch.models import ResNet2D, ResNet3D
 
 
 def test_resnet2d():
