@@ -7,7 +7,8 @@ from torch import nn
 
 
 class ResNet3D(nn.Module):
-    def __init__(self, output_classes, input_channels=1, start_channels=12):
+
+    def __init__(self, output_classes, input_channels=1, start_channels=12, version=18):
         """
         Args:
             output_classes: Number of output classes
@@ -17,6 +18,8 @@ class ResNet3D(nn.Module):
             input_channels: Number of input channels
 
             start_channels: Number of channels in first convolutional layer
+
+            version: ResNet version (18, 34), defaults to 18
         """
         super(ResNet3D, self).__init__()
         self.in_channels = start_channels
@@ -32,13 +35,18 @@ class ResNet3D(nn.Module):
         self.relu = nn.ReLU()
 
         current_channels = self.in_channels
-        self.layer1 = self.make_layer(ResidualBlock3d, current_channels, 2, 2)
-        current_channels *= 2
-        self.layer2 = self.make_layer(ResidualBlock3d, current_channels, 2, 2)
-        current_channels *= 2
-        self.layer3 = self.make_layer(ResidualBlock3d, current_channels, 2, 2)
-        current_channels *= 2
-        self.layer4 = self.make_layer(ResidualBlock3d, current_channels, 2, 2)
+        self.layers = nn.ModuleList()
+        if version == 18:
+            blocks = [2, 2, 2, 2]
+        elif version == 34:
+            blocks = [3, 4, 6, 3]
+
+        for i, block in enumerate(blocks):
+            self.layers.append(
+                self.make_layer(ResidualBlock3d, current_channels, block, 2)
+            )
+            if i != 3:
+                current_channels *= 2
 
         self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         self.fc = nn.Linear(current_channels, output_classes)
@@ -67,10 +75,8 @@ class ResNet3D(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         out = self.conv(x)
         out = self.bn(out)
-        out = self.layer1(out)
-        out = self.layer2(out)
-        out = self.layer3(out)
-        out = self.layer4(out)
+        for layer in self.layers:
+            out = layer(out)
         out = self.avgpool(out)
         out = torch.flatten(out, 1)
         out = self.fc(out)
