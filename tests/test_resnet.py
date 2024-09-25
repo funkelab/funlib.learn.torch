@@ -1,17 +1,23 @@
+import pytest
 import torch
 
-from funlib.learn.torch.models import ResNet2D, ResNet3D
+from funlib.learn.torch.models import ResNet
 
 
-def test_resnet2d():
-    net = ResNet2D(10, input_channels=2, start_channels=12)
-    assert net(torch.rand(1, 2, 64, 64)).shape == (1, 10)
+@pytest.mark.parametrize("num_blocks", [[2, 2, 2, 2], [3, 4, 6, 3], [3, 4, 23, 3]])
+@pytest.mark.parametrize("dimension", [2, 3])
+@pytest.mark.parametrize("block_type", ["basic", "bottleneck"])
+def test_resnet(num_blocks, dimension, block_type):
+    net = ResNet(
+        10,
+        input_channels=2,
+        start_channels=12,
+        num_blocks=num_blocks,
+        dimension=dimension,
+        block_type=block_type,
+    )
+    input_spatial_shape = (64,) * dimension
+    assert net(torch.rand(1, 2, *input_spatial_shape)).shape == (1, 10)
     # Try with a different shape, should still work
-    assert net(torch.rand(1, 2, 32, 32)).shape == (1, 10)
-
-
-def test_resnet3d():
-    net = ResNet3D(10, input_channels=2, start_channels=12)
-    assert net(torch.rand(1, 2, 64, 64, 64)).shape == (1, 10)
-    # Try with a different shape, should still work
-    assert net(torch.rand(1, 2, 32, 32, 32)).shape == (1, 10)
+    input_spatial_shape = (32,) * dimension
+    assert net(torch.rand(1, 2, *input_spatial_shape)).shape == (1, 10)
