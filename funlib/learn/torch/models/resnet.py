@@ -13,7 +13,7 @@ class ResNet(nn.Module):
         output_classes,
         input_channels=1,
         start_channels=12,
-        version=18,
+        num_blocks=[2, 2, 2, 2],
         dimension=2,
     ):
         """
@@ -26,7 +26,7 @@ class ResNet(nn.Module):
 
             start_channels: Number of channels in first convolutional layer
 
-            version: ResNet version (18, 34), defaults to 18
+            num_blocks: Number of residual blocks in each layer, defaults to [2, 2, 2, 2] which corresponds to ResNet18
 
             dimension: Dimension of the input images (2, 3), defaults to 2
         """
@@ -56,12 +56,8 @@ class ResNet(nn.Module):
         self.layers = nn.ModuleList()
 
         # Define number of blocks for each layer
-        if version == 18:
-            blocks = [2, 2, 2, 2]
-        elif version == 34:
-            blocks = [3, 4, 6, 3]
 
-        for i, block in enumerate(blocks):
+        for i, block in enumerate(num_blocks):
             self.layers.append(
                 self.make_layer(ResidualBlock, current_channels, block, 2)
             )
@@ -158,15 +154,37 @@ class ResidualBlock(nn.Module):
 
 # Convenience classes
 class ResNet2D(ResNet):
-    def __init__(self, output_classes, input_channels=1, start_channels=12, version=18):
+
+    def __init__(
+        self,
+        output_classes,
+        input_channels=1,
+        start_channels=12,
+        num_blocks=[2, 2, 2, 2],
+    ):
         super().__init__(
-            output_classes, input_channels, start_channels, version, dimension=2
+            output_classes,
+            input_channels,
+            start_channels,
+            num_blocks=num_blocks,
+            dimension=2,
         )
 
 
 class ResNet3D(ResNet):
-    def __init__(self, output_classes, input_channels=1, start_channels=12, version=18):
+
+    def __init__(
+        self,
+        output_classes,
+        input_channels=1,
+        start_channels=12,
+        num_blocks=[2, 2, 2, 2],
+    ):
         super().__init__(
-            output_classes, input_channels, start_channels, version, dimension=3
+            output_classes,
+            input_channels,
+            start_channels,
+            num_blocks=num_blocks,
+            dimension=3,
         )
         assert self.dimension == 3
