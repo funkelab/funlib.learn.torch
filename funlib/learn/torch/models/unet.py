@@ -100,7 +100,7 @@ class Upsample(torch.nn.Module):
             )
 
         else:
-            self.up = torch.nn.Upsample(scale_factor=scale_factor, mode=mode)
+            self.up = torch.nn.Upsample(scale_factor=tuple(scale_factor), mode=mode)
 
         self.padding = padding
 
