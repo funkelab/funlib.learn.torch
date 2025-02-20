@@ -29,6 +29,21 @@ def test_creation():
         num_fmaps=3,
         fmap_inc_factor=2,
         downsample_factors=[[2, 2, 2], [2, 2, 2]],
+        constant_upsample=True,
+    )
+
+    x = np.zeros((1, 1, 100, 80, 48), dtype=np.float64)
+    x = torch.from_numpy(x).float()
+
+    y = unet.forward(x).data.numpy()
+
+    assert y.shape == (1, 3, 60, 40, 8)
+
+    unet = models.UNet(
+        in_channels=1,
+        num_fmaps=3,
+        fmap_inc_factor=2,
+        downsample_factors=[[2, 2, 2], [2, 2, 2]],
         num_fmaps_out=5,
     )
 
